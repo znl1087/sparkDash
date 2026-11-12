@@ -7,6 +7,7 @@ import { FleetEnergyCard } from "./FleetEnergyCard";
 import { FleetAlertStrip } from "./FleetAlertStrip";
 import { FleetTokenTotals } from "./FleetTokenTotals";
 import { InferenceTrafficCard } from "./InferenceTrafficCard";
+import { PdSplitCard } from "./PdSplitCard";
 import { FleetKpis, type KpiVisibility } from "./FleetKpis";
 import { ACTIVITY_ID, ENERGY_ID, TOKENS_ID } from "../../constants";
 import { SparkCard } from "./SparkCard";
@@ -24,6 +25,7 @@ interface OverviewPageProps {
   showFleetEnergy?: boolean;
   /** Opt-in server capability; absent sources add no card or polling. */
   showInferenceActivity?: boolean;
+  showPdSplit?: boolean;
   showFleetExceptions?: boolean;
   /** Alert notifications on: the exceptions strip lists `serverAlerts` instead of deriving its own. */
   alertsEnabled?: boolean;
@@ -49,6 +51,7 @@ export function OverviewPage({
   hideWorkers = false,
   showFleetEnergy = true,
   showInferenceActivity = false,
+  showPdSplit = false,
   showFleetExceptions = false,
   alertsEnabled = false,
   serverAlerts = null,
@@ -345,8 +348,9 @@ export function OverviewPage({
           })}
         </div>
         <FleetKpis sparks={sparks} snapshotKey={sparks} show={kpis} />
-        {showFleetEnergy || showLlmTokenTotals || showActivityFeed || showInferenceActivity ? (
+        {showFleetEnergy || showLlmTokenTotals || showActivityFeed || showInferenceActivity || showPdSplit ? (
         <div className="ov-side">
+          {showPdSplit ? <PdSplitCard /> : null}
           {showInferenceActivity ? <InferenceTrafficCard /> : null}
           {showFleetEnergy ? <FleetEnergyCard nodeCount={sparks.length} nodeNames={Object.fromEntries(sparks.map((s) => [s.id, s.name]))} onOpenDetails={onNavigate ? () => onNavigate(ENERGY_ID) : undefined} /> : null}
           {showLlmTokenTotals ? <FleetTokenTotals onOpenDetails={onNavigate ? () => onNavigate(TOKENS_ID) : undefined} /> : null}

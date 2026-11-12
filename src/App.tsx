@@ -586,6 +586,7 @@ function DashboardApp() {
                   hideWorkers={hideWorkers}
                   showFleetEnergy={settings?.showFleetEnergy ?? true}
                   showInferenceActivity={settings?.inferenceActivityEnabled === true}
+                  showPdSplit={settings?.pdSplitEnabled === true}
                   showFleetExceptions={settings?.showFleetExceptions ?? false}
                   alertsEnabled={settings?.alertsEnabled ?? false}
                   serverAlerts={serverAlerts}

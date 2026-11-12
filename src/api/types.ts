@@ -918,9 +918,34 @@ export interface InferenceActivity {
   overflowed: boolean;
 }
 
+/** Prefill/decode split summary: long prompts prefilled on a separate host, decoded on the cluster. */
+export interface PdSplit {
+  enabled: boolean;
+  available: boolean;
+  generatedAt: string | null;
+  error: string | null;
+  /** Whether the prefill engine answers; null while the source is unavailable. */
+  engineUp: boolean | null;
+  /** Prompts adding fewer new tokens than this stay on the cluster. */
+  minTokens: number | null;
+  /** Counters since the proxy started. */
+  totals: { pd: number; direct: number; failed: number; tokens: number; prefillMs: number } | null;
+  active: { tokens: number; ageMs: number } | null;
+  recent: Array<{
+    tokens: number;
+    prefixTokens: number;
+    prefillMs: number;
+    pushMs: number;
+    stateBytes: number;
+    observedAt: string;
+  }>;
+}
+
 export interface Settings {
   /** Read-only server capability; configured through environment variables. */
   inferenceActivityEnabled?: boolean;
+  /** Read-only server capability; configured through environment variables. */
+  pdSplitEnabled?: boolean;
   pollIntervalMs: number;
   defaultLlmPort: number;
   autoHideOffline: boolean;

@@ -15,6 +15,7 @@ import type {
   FleetEnergy,
   HealthResponse,
   InferenceActivity,
+  PdSplit,
   HermesBatchUpdateResponse,
   GpuClockStatus,
   FleetGpuClockResult,
@@ -83,6 +84,11 @@ export function fetchFleetEnergy(): Promise<FleetEnergy> {
 /** Optional, sanitized inference request activity from a configured private source. */
 export function fetchInferenceActivity(): Promise<InferenceActivity> {
   return apiFetch("/api/inference/activity");
+}
+
+/** Optional prefill/decode split summary from a configured private front proxy. */
+export function fetchPdSplit(): Promise<PdSplit> {
+  return apiFetch("/api/pd-split");
 }
 
 /** Fleet activity log, newest first. */

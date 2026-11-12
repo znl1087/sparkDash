@@ -47,6 +47,7 @@ import {
 } from "./collectors/QualityBench.js";
 import { showcaseManager } from "./collectors/ShowcaseManager.js";
 import { InferenceActivityStore } from "./collectors/InferenceActivity.js";
+import { PdSplitStore } from "./collectors/PdSplit.js";
 import { llmProbeHost } from "./collectors/llmHost.js";
 import { onceClose, resolveLlmHttpTarget } from "./collectors/llmTunnel.js";
 import { formatLlmBaseUrl, parseLlmTargetInput } from "../src/shared/llmTarget.js";
@@ -297,6 +298,7 @@ function consumeBenchStartQuota(req, res) {
 // ─── Spark registry ──────────────────────────────────────
 const registry = new SparkRegistry();
 const inferenceActivity = new InferenceActivityStore();
+const pdSplit = new PdSplitStore();
 const occupancy = createOccupancyRuntime({ listSparks: () => registry.sparks });
 
 const fleetEnergyTracker = new FleetEnergyTracker({
@@ -754,7 +756,7 @@ app.put("/api/sparks/order", (req, res) => {
 
 // ─── Global settings ──────────────────────────────────────
 app.get("/api/settings", (_req, res) => {
-  res.json({ ...getSettings(), inferenceActivityEnabled: inferenceActivity.enabled });
+  res.json({ ...getSettings(), inferenceActivityEnabled: inferenceActivity.enabled, pdSplitEnabled: pdSplit.enabled });
 });
 
 app.put("/api/settings", (req, res) => {
@@ -771,7 +773,7 @@ app.put("/api/settings", (req, res) => {
     }
     // MQTT broker URL / prefix / enablement changed: reconnect (a no-op otherwise).
     mqttPublisher.applySettings();
-    res.json({ ...newSettings, inferenceActivityEnabled: inferenceActivity.enabled });
+    res.json({ ...newSettings, inferenceActivityEnabled: inferenceActivity.enabled, pdSplitEnabled: pdSplit.enabled });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -781,6 +783,12 @@ app.put("/api/settings", (req, res) => {
 app.get("/api/inference/activity", async (_req, res) => {
   await inferenceActivity.refreshIfDue();
   res.set("Cache-Control", "no-store").json(inferenceActivity.snapshot());
+});
+
+// Optional prefill/decode split summary from a front proxy; the source URL can only be set on the server.
+app.get("/api/pd-split", async (_req, res) => {
+  await pdSplit.refreshIfDue();
+  res.set("Cache-Control", "no-store").json(pdSplit.snapshot());
 });
 
 // GET /api/sparks/:id/gpu-history (GPU raw tier, newest last) and /api/sparks/:id/history (bucketed tiers).

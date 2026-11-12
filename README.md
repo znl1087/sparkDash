@@ -1209,6 +1209,35 @@ Live probes use the LAN IP on remote units, and fall back to an SSH forward to t
 
 ---
 
+## Prefill / decode split
+
+Some deployments prefill long prompts on a separate GPU host and hand the prefix state to the decode cluster. An optional Overview card shows that split: whether the prefill engine is up, the prompt it is prefilling now, how many requests were split, stayed on the cluster or fell back, the prefill host's average speed, and the most recent split prompts (prompt size, prefill speed, prefill and state-transfer time, state size). It is disabled by default and makes no source requests until configured. Add the prefill host itself as a non-Spark unit to see its GPU.
+
+Set this variable in the **server's environment**, then restart sparkDash:
+
+```dotenv
+SPARKDASH_PD_STATS_URL=http://192.168.1.20:8889/pd/stats
+```
+
+The URL follows the same rules as the inference activity source below (explicit loopback or RFC1918 IP literal, no credentials, 5 second timeout, at most 64 KiB). The source must return `application/json` with this shape; counters are cumulative since the proxy started and carry no prompts or keys:
+
+```json
+{
+  "generatedAt": "2026-11-12T08:00:09.000Z",
+  "engineUp": true,
+  "minTokens": 16384,
+  "totals": {"pd": 3, "direct": 5, "failed": 1, "tokens": 300000, "prefillMs": 33000},
+  "active": {"tokens": 61000, "ageMs": 1500},
+  "recent": [
+    {"tokens": 122733, "prefixTokens": 120832, "prefillMs": 14372, "pushMs": 995, "stateBytes": 110500000, "ageMs": 4000}
+  ]
+}
+```
+
+A sample older than 30 seconds, or one that fails validation, is shown as unavailable rather than as zeros. `GET /api/pd-split` returns the sanitized summary.
+
+---
+
 ## Optional inference request activity
 
 For shared inference deployments, an optional Overview card groups in-flight requests and recent completions by approved **display labels**. It is disabled by default and makes no source requests until configured. The gateway must already expose sanitized JSON; sparkDash does not intercept inference, handle client API keys or infer their owners.
