@@ -10,8 +10,9 @@ const split = (overrides: Partial<PdSplit> = {}): PdSplit => ({
   enabled: true, available: true, generatedAt: new Date(Date.now()).toISOString(), error: null,
   engineUp: true, minTokens: 16384,
   totals: { pd: 3, direct: 5, failed: 1, tokens: 300000, prefillMs: 30000 },
+  queued: 0,
   active: null,
-  recent: [{ tokens: 122733, prefixTokens: 120832, prefillMs: 14372, pushMs: 995, stateBytes: 110500000, observedAt: "2026-11-12T08:00:05Z" }],
+  recent: [{ tokens: 122733, prefixTokens: 120832, cachedTokens: 0, prefillMs: 14372, pushMs: 995, stateBytes: 110500000, observedAt: "2026-11-12T08:00:05Z" }],
   ...overrides,
 });
 
@@ -30,11 +31,16 @@ describe("optional prefill/decode split card", () => {
   });
 
   it("shows the prompt being prefilled and a down engine", async () => {
-    fetchSplit.mockResolvedValue(split({ active: { tokens: 61000, ageMs: 2500 } }));
+    fetchSplit.mockResolvedValue(split({
+      active: { tokens: 61000, ageMs: 2500 }, queued: 2,
+      recent: [{ tokens: 68640, prefixTokens: 22528, cachedTokens: 45056, prefillMs: 2794, pushMs: 583, stateBytes: 63098912, observedAt: "2026-11-12T08:00:05Z" }],
+    }));
     const busy = render(<PdSplitCard />);
     await flush();
     expect(busy.container.textContent).toContain("Prefilling");
-    expect(busy.container.textContent).toContain("61.0K token prompt");
+    expect(busy.container.textContent).toContain("61.0K token prompt · 2 queued");
+    // speed is the computed tokens over the prefill time; the cached part is shown beside the prompt size
+    expect(busy.container.textContent).toContain("68.6K tok (45.1K cached) · 8,063 tok/s");
     cleanupRenders();
 
     fetchSplit.mockResolvedValue(split({ engineUp: false }));

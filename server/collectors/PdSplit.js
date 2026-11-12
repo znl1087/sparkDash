@@ -36,9 +36,12 @@ export function parsePdSplit(payload, nowMs = Date.now()) {
       !count(entry.tokens, MAX_TOKENS) || !count(entry.prefixTokens, MAX_TOKENS) || entry.prefixTokens > entry.tokens ||
       !count(entry.prefillMs, MAX_DURATION_MS) || !count(entry.pushMs, MAX_DURATION_MS) ||
       !count(entry.stateBytes, MAX_STATE_BYTES) || !count(entry.ageMs, MAX_DURATION_MS)) return null;
+    // Tokens the prefill host reused from its prefix cache; prefixTokens counts only what it computed.
+    const cachedTokens = entry.cachedTokens ?? 0;
+    if (!count(cachedTokens, MAX_TOKENS) || entry.prefixTokens + cachedTokens > entry.tokens) return null;
     if (nowMs - generatedMs + entry.ageMs > RETENTION_MS) continue;
     recent.push({
-      tokens: entry.tokens, prefixTokens: entry.prefixTokens, prefillMs: entry.prefillMs, pushMs: entry.pushMs,
+      tokens: entry.tokens, prefixTokens: entry.prefixTokens, cachedTokens, prefillMs: entry.prefillMs, pushMs: entry.pushMs,
       stateBytes: entry.stateBytes, observedAt: new Date(Math.max(0, generatedMs - entry.ageMs)).toISOString(),
     });
   }
@@ -46,6 +49,7 @@ export function parsePdSplit(payload, nowMs = Date.now()) {
     generatedMs, active, recent,
     engineUp: payload.engineUp === true,
     minTokens: count(payload.minTokens, MAX_TOKENS) ? payload.minTokens : null,
+    queued: count(payload.queued, 10_000) ? payload.queued : 0,
     totals: { pd: totals.pd, direct: totals.direct, failed: totals.failed, tokens: totals.tokens, prefillMs: totals.prefillMs },
   };
 }
@@ -93,6 +97,7 @@ export class PdSplitStore {
       engineUp: available ? this.payload.engineUp : null,
       minTokens: available ? this.payload.minTokens : null,
       totals: available ? this.payload.totals : null,
+      queued: available ? this.payload.queued : null,
       active: available && this.payload.active ? { ...this.payload.active, ageMs: this.payload.active.ageMs + drift } : null,
       recent: available ? this.payload.recent.filter((entry) => nowMs - Date.parse(entry.observedAt) <= RETENTION_MS) : [],
     };

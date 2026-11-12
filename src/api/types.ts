@@ -930,10 +930,15 @@ export interface PdSplit {
   minTokens: number | null;
   /** Counters since the proxy started. */
   totals: { pd: number; direct: number; failed: number; tokens: number; prefillMs: number } | null;
+  /** Prompts waiting for the prefill host behind the one in flight. */
+  queued: number | null;
   active: { tokens: number; ageMs: number } | null;
   recent: Array<{
     tokens: number;
+    /** Tokens the prefill host computed for this prompt. */
     prefixTokens: number;
+    /** Tokens it reused from its prefix cache. */
+    cachedTokens: number;
     prefillMs: number;
     pushMs: number;
     stateBytes: number;

@@ -71,7 +71,9 @@ export function PdSplitCard() {
           {active ? (
             <div className="rounded border border-border bg-surface-elevated px-2.5 py-2 text-[12px]">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-text-strong">{tokens(active.tokens)} token prompt</span>
+                <span className="font-semibold text-text-strong">
+                  {tokens(active.tokens)} token prompt{split.queued ? ` · ${split.queued} queued` : ""}
+                </span>
                 <span className="font-tabular text-success">{seconds(active.ageMs)}</span>
               </div>
             </div>
@@ -98,7 +100,9 @@ export function PdSplitCard() {
             <div className="mb-1.5 text-[10px] uppercase tracking-wide text-muted">Recent split prompts</div>
             {recent.slice(0, 6).map((entry, index) => (
               <div key={`${entry.observedAt}-${index}`} className="flex items-center justify-between gap-2 text-[11px]">
-                <span className="truncate text-text">{tokens(entry.tokens)} tok · {rate(entry.prefixTokens, entry.prefillMs)}</span>
+                <span className="truncate text-text">
+                  {tokens(entry.tokens)} tok{entry.cachedTokens > 0 ? ` (${tokens(entry.cachedTokens)} cached)` : ""} · {rate(entry.prefixTokens, entry.prefillMs)}
+                </span>
                 <span className="font-tabular text-muted">
                   {seconds(entry.prefillMs)} + {seconds(entry.pushMs)} · {Math.round(entry.stateBytes / 1e6)} MB
                 </span>
@@ -110,6 +114,7 @@ export function PdSplitCard() {
       )}
       <p className="text-[10px] text-muted">
         Counts since the proxy started. Recent rows: prompt size · prefill speed, then prefill + state transfer time · state size.
+        Speed counts only the tokens computed; cached ones come from the prefill host's prefix cache.
         {available && split.minTokens ? ` Prompts adding fewer than ${tokens(split.minTokens)} new tokens stay on the cluster.` : ""}
       </p>
     </Panel>

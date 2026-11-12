@@ -23,6 +23,16 @@ test("parsePdSplit keeps bounded counters and turns ages into timestamps", () =>
   assert.deepEqual(parsed.active, { tokens: 61000, ageMs: 1500 });
   assert.equal(parsed.recent[0].observedAt, "2026-11-12T08:00:05.000Z");
   assert.equal(parsed.recent[0].prefixTokens, 120832);
+  assert.equal(parsed.recent[0].cachedTokens, 0);
+  assert.equal(parsed.queued, 0);
+});
+
+test("parsePdSplit keeps prefix-cache hits and the queue length", () => {
+  const cached = { tokens: 68640, prefixTokens: 22528, cachedTokens: 45056, prefillMs: 2794, pushMs: 583, stateBytes: 63098912, ageMs: 1000 };
+  const parsed = parsePdSplit(payload({ queued: 2, recent: [cached] }), NOW);
+  assert.equal(parsed.queued, 2);
+  assert.equal(parsed.recent[0].cachedTokens, 45056);
+  assert.equal(parsePdSplit(payload({ recent: [{ ...cached, cachedTokens: 60000 }] }), NOW), null);
 });
 
 test("parsePdSplit rejects stale, malformed and inconsistent payloads", () => {
